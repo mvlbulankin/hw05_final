@@ -31,10 +31,13 @@ class PostURLTests(TestCase):
         cls.templates_url_names_authorized_client = {
             "/create/": "posts/create_post.html",
             f"/posts/{cls.post.pk}/edit/": "posts/create_post.html",
+            f"/posts/{cls.post.pk}/comment/": "posts/post_detail.html",
+            "/follow/": "posts/follow.html",
+            f"/profile/{cls.post.author}/follow/": "posts/profile.html",
+            f"/profile/{cls.post.author}/unfollow/": "posts/profile.html",
         }
 
     def setUp(self):
-        self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
@@ -46,7 +49,7 @@ class PostURLTests(TestCase):
         """
         for address, template in self.templates_url_names_guest_client.items():
             with self.subTest(address=address):
-                response = self.guest_client.get(address)
+                response = self.client.get(address)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
                 self.assertTemplateUsed(response, template)
 
@@ -61,7 +64,7 @@ class PostURLTests(TestCase):
             template,
         ) in self.templates_url_names_authorized_client.items():
             with self.subTest(address=address):
-                response = self.authorized_client.get(address)
+                response = self.authorized_client.get(address, follow=True)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
                 self.assertTemplateUsed(response, template)
 
@@ -70,6 +73,6 @@ class PostURLTests(TestCase):
         Несуществующий адрес вызывает 404
 
         """
-        response = self.guest_client.get("/unexisting_page/")
+        response = self.client.get("/unexisting_page/")
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         self.assertTemplateUsed(response, "core/404.html")

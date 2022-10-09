@@ -7,7 +7,10 @@ from .utils import get_paginator
 
 
 def index(request):
-    """Выводит шаблон главной страницы"""
+    """
+    Выводит шаблон главной страницы
+
+    """
     page_obj = get_paginator(
         Post.objects.select_related("author", "group"), request
     )
@@ -15,7 +18,10 @@ def index(request):
 
 
 def group_posts(request, slug):
-    """Выводит шаблон с группами постов"""
+    """
+    Выводит шаблон с группами постов
+
+    """
     group = get_object_or_404(Group, slug=slug)
     posts = group.posts.select_related("author")
     page_obj = get_paginator(posts, request)
@@ -27,7 +33,10 @@ def group_posts(request, slug):
 
 
 def profile(request, username):
-    """Выводит шаблон профайла пользователя"""
+    """
+    Выводит шаблон профайла пользователя
+
+    """
     author = get_object_or_404(User, username=username)
     posts = author.posts.select_related("group")
     page_obj = get_paginator(posts, request)
@@ -47,7 +56,10 @@ def profile(request, username):
 
 
 def post_detail(request, post_id):
-    """Выводит детальное описание поста"""
+    """
+    Выводит детальное описание поста
+
+    """
     post = get_object_or_404(Post, pk=post_id)
     form = CommentForm(request.POST or None)
     comments = Comment.objects.filter(post=post)
@@ -60,7 +72,10 @@ def post_detail(request, post_id):
 
 @login_required
 def post_create(request):
-    """Создает новый пост"""
+    """
+    Создает новый пост
+
+    """
     form = PostForm(request.POST or None)
     if request.method != "POST" or not form.is_valid():
         return render(request, "posts/create_post.html", {"form": form})
@@ -72,7 +87,10 @@ def post_create(request):
 
 @login_required
 def post_edit(request, post_id):
-    """Редактирует пост"""
+    """
+    Редактирует пост
+
+    """
     is_edit = True
     post = get_object_or_404(Post, pk=post_id)
     if request.user != post.author:
@@ -94,7 +112,10 @@ def post_edit(request, post_id):
 
 @login_required
 def add_comment(request, post_id):
-    """Добавляет комментарий"""
+    """
+    Добавляет комментарий
+
+    """
     post = get_object_or_404(Post, pk=post_id)
     form = CommentForm(request.POST or None)
     if form.is_valid():
@@ -107,16 +128,21 @@ def add_comment(request, post_id):
 
 @login_required
 def follow_index(request):
-    """Добавляет комментарий"""
-    template = "posts/follow.html"
+    """
+    Добавляет комментарий
+
+    """
     posts = Post.objects.filter(author__following__user=request.user)
     page_obj = get_paginator(posts, request)
-    return render(request, template, {"page_obj": page_obj})
+    return render(request, "posts/follow.html", {"page_obj": page_obj})
 
 
 @login_required
 def profile_follow(request, username):
-    """Подписывает на автора"""
+    """
+    Подписывает на автора
+
+    """
     user = request.user
     author = get_object_or_404(User, username=username)
     following = Follow.objects.filter(author=author, user=user).exists()
@@ -128,8 +154,11 @@ def profile_follow(request, username):
 
 @login_required
 def profile_unfollow(request, username):
-    """Отписывает от автора"""
+    """
+    Отписывает от автора
+
+    """
     user = get_object_or_404(User, username=username)
-    unfollow, _ = Follow.objects.get_or_create(user=request.user, author=user)
+    unfollow = Follow.objects.filter(user=request.user, author=user)
     unfollow.delete()
     return redirect("posts:profile", username)

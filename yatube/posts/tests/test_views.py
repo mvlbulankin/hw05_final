@@ -30,10 +30,11 @@ class PostPagesTest(TestCase):
         cls.guest_client = Client()
         cls.authorized_client = Client()
         cls.authorized_client.force_login(cls.author)
-        cls.author_another = User.objects.create_user(username="Неавтор")
+        cls.author_another = User.objects.create_user(
+            username="author_another"
+        )
         cls.authorized_author_another_client = Client()
         cls.authorized_author_another_client.force_login(cls.author_another)
-
         cls.small_gif = (
             b"\x47\x49\x46\x38\x39\x61\x01\x00"
             b"\x01\x00\x00\x00\x00\x21\xf9\x04"
@@ -79,6 +80,16 @@ class PostPagesTest(TestCase):
             reverse(
                 "posts:post_edit", kwargs={"post_id": self.post.pk}
             ): "posts/create_post.html",
+            reverse(
+                "posts:add_comment", kwargs={"post_id": self.post.pk}
+            ): "posts/post_detail.html",
+            reverse("posts:follow_index"): "posts/follow.html",
+            reverse(
+                "posts:profile_follow", kwargs={"username": self.author}
+            ): "posts/profile.html",
+            reverse(
+                "posts:profile_unfollow", kwargs={"username": self.author}
+            ): "posts/profile.html",
         }
 
     def _assert_post_has_attribs(self, post, pk, author, group, image):
@@ -113,7 +124,9 @@ class PostPagesTest(TestCase):
         """
         for reverse_name, template in self.templates_pages_names_user.items():
             with self.subTest(reverse_name=reverse_name):
-                response = self.authorized_client.get(reverse_name)
+                response = self.authorized_client.get(
+                    reverse_name, follow=True
+                )
                 self.assertTemplateUsed(response, template)
                 self._assert_post_has_attribs(
                     self.post,
@@ -157,19 +170,28 @@ class PostPagesTest(TestCase):
 
     def test_follow_author_another(self):
         """
-        Follow на другого пользователя работает корректно
+        Follow на другого пользователя работает корректно,
+        Follow на самого себя не возможен,
+        Follow на одного пользователя дважды не возможен
 
         """
-        self.authorized_author_another_client.get(
-            reverse(
-                "posts:profile_follow",
-                kwargs={"username": self.author.username},
+        for i in range(2):
+            self.authorized_author_another_client.get(
+                reverse(
+                    "posts:profile_follow",
+                    kwargs={"username": self.author.username},
+                )
             )
-        )
         follow_exist = Follow.objects.filter(
             user=self.author_another, author=self.author
         ).exists()
+        follow_exist_myself = Follow.objects.filter(
+            user=self.author, author=self.author
+        ).exists()
+        follow_count = Follow.objects.count()
         self.assertTrue(follow_exist)
+        self.assertFalse(follow_exist_myself)
+        self.assertEqual(follow_count, 1)
 
     def test_unfollow_author_another(self):
         """
