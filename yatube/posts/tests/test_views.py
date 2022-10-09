@@ -182,6 +182,13 @@ class PostPagesTest(TestCase):
                     kwargs={"username": self.author.username},
                 )
             )
+        self.authorized_client.get(
+            reverse(
+                "posts:profile_follow",
+                kwargs={"username": self.author.username},
+            )
+        )
+
         follow_exist = Follow.objects.filter(
             user=self.author_another, author=self.author
         ).exists()
