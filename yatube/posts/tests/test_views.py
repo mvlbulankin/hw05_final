@@ -188,7 +188,6 @@ class PostPagesTest(TestCase):
                 kwargs={"username": self.author.username},
             )
         )
-
         follow_exist = Follow.objects.filter(
             user=self.author_another, author=self.author
         ).exists()
